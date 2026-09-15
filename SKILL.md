@@ -145,7 +145,7 @@ digraph git_gud {
    **No separate hardening pass.** Brainstorming's own self-review IS the spec review. Reviewers on top of it never terminate — a root document has no reference to check against, so an attacker always finds more (measured: 3–6 rounds, and it invents features into the spec you're about to approve). The spec's check is you reading it at the gate.
 
    Brainstorming's step 8 ("ask the user to review the spec") **is** the gate — one ask, not two.
-2. **Gate.** Present the written spec. The gate opens ONLY on a magic keyword — **"no cap"**, **"autopilot"**, or **"lgtm"** — any capitalization ("NO CAP", "nO Cap", "LGTM"), anywhere in the message, and only in a **reply to the presented spec**. "Looks good" / "approved" / "go ahead" / "ship it" = positive feedback: acknowledge, then ask for a keyword. A keyword in the user's *initial request* selects this skill but pre-approves nothing — the gate needs a keyword again in reply to the spec. Once it lands, never ask for approval again.
+2. **Gate.** Present the written spec. The gate opens ONLY on a magic keyword — **"no cap"**, **"autopilot"**, or **"lgtm"** — any capitalization ("NO CAP", "nO Cap", "LGTM"), as the **entire trimmed reply**, and only in a **reply to the presented spec**. A keyword mixed with anything else ("lgtm but rename X", "not lgtm") is feedback, not approval: address it, re-present, and ask again. "Looks good" / "approved" / "go ahead" / "ship it" = positive feedback: acknowledge, then ask for a keyword. A keyword in the user's *initial request* selects this skill but pre-approves nothing — the gate needs a keyword again in reply to the spec. Once it lands, never ask for approval again.
 
 ## Autopilot — NO further gates
 
@@ -247,6 +247,19 @@ Run to completion. Initialize `update_plan` from the approved spec before planni
    - Minor/nitpicks → note in the final report.
    - All three clean → Finish (step 6: menu, then wait).
 6. **Finish — menu, then WAIT.** REQUIRED SUB-SKILL: superpowers:finishing-a-development-branch. Run it as written: verify tests, detect environment, confirm the base branch, then **present its integration menu (merge locally / push + PR / keep as-is) and STOP until the user answers**. Autopilot never picks an option itself — "no further gates" does NOT extend to integration; merging or touching the base branch without the user's chosen option is a violation. Execute only the option they choose. **Push ONLY on the user's explicit command.**
+
+   Before the menu, print the **final report** in exactly this shape; every "note in the final report" above lands here:
+
+   ```
+   ## Final report
+   Spec: <path@revision>   Plan: <path@revision>   Base: <branch>
+   Beads: <id> — <commit> — <owner agentId>   (one line each)
+   Reviews: <scope> — <reviewer agentId> — PASS|FAIL — <n> findings   (task, final, last gate ×3)
+   Unresolved minors: <finding or none>
+   Blockers hit: <what, how resolved, or none>
+   Runtime degradation: <SoL-Pi mechanism unavailable, substitutions, or none>
+   Tests: <command> — <result>
+   ```
 
 ## Red Flags — STOP
 
