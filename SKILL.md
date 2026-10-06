@@ -21,17 +21,24 @@ Record one workspace ID and absolute checkout path for the pipeline, following `
 
 Every delegated agent uses Paseo provider **`pi`**. Claude families run through Pi's `claude-bridge`, never the Claude Code provider. The parent may use any provider.
 
-| Role | Eligible model families via Pi |
-|---|---|
-| Plan and final reviewers | Opus · Terra |
-| Features, complex debugging, security, cross-cutting work | Opus |
-| Simple, bounded, low-risk implementation or docs | Sonnet · Terra |
+The current orchestrator handles brainstorming/spec, implementation planning, coordination and final summary; keep its model and effort unchanged. The table governs delegated work. Sol means **GPT-6.1 Sol**; Astra means **GPT-6 Astra**.
 
-Choose one eligible model per assignment based on fit and availability; no family-percentage quota or assignment accounting. Prefer cross-family review contrast when practical. If simple work becomes complex, hand off to Opus with ownership and context recorded.
+| Task | Default | Alternatives | Effort |
+|---|---|---|---|
+| Independent plan review | Sol | Opus 5.5 · Astra · Fable 5.1 | Medium |
+| Complex implementation | Opus 5.5 · Sol | Astra · Fable 5.1 | Defaults: medium; alternatives: low only under the condition below |
+| Security, difficult debugging, ambiguous cross-cutting work | Opus 5.5 | Astra · Fable 5.1 | Medium |
+| Simple, bounded, low-risk implementation, tests or docs | Sonnet 5.5 | Sol | Low |
+| Final review and optional re-review | Sol | Opus 5.5 · Astra · Fable 5.1 | Medium |
+| Review fixes | Original implementation owner | Suitable replacement if needed | Match task complexity |
 
-Discover current profiles, models, modes and effort IDs before launch; never guess IDs. An otherwise suitable `claude` profile must be re-materialized through Pi with compatible settings, not copied unchanged. Use **low** thinking for simple bounded work and **medium** for other work and reviews, overriding profile defaults and updating reused agents when roles change. Unsupported effort requires a supported alternative; never silently use high or change parent/global settings.
+Astra/Fable low is eligible for complex implementation only when the task is well-specified, decomposed and backed by strong tests. Security, difficult debugging and ambiguous cross-cutting tasks use their dedicated medium-effort row regardless of decomposition or tests.
 
-On confirmed Claude usage-limit failure, record it and stop creating or prompting Claude-family agents for the rest of the five-hour window; no quota probes or artificial work. Substitute Terra only for eligible roles; complex work otherwise blocks. For other route failures, disclose an eligible same-role substitution or report a blocker. Never broaden the matrix to work around availability.
+Choose one eligible model per assignment based on fit and availability; no family-percentage quota or mandatory Astra/Fable turn. Prefer cross-family review contrast when practical. When task complexity changes, re-evaluate the row and effort; update a suitable owner or hand off with ownership and context recorded. Original ownership never overrides routing eligibility.
+
+Discover current profiles, models, modes and effort IDs before launch; never guess IDs. An otherwise suitable `claude` profile must be re-materialized through Pi with compatible settings, not copied unchanged. Apply the table's effort, overriding profile defaults and updating reused agents when roles change. Unsupported effort requires a supported alternative; never silently use high or change parent/global settings.
+
+On confirmed Claude usage-limit failure, record it and stop creating or prompting Claude-family agents for the rest of the five-hour window; no quota probes or artificial work. Substitute Sol or Astra only where the task's row permits, at its required effort; otherwise report a blocker. For other route failures, disclose an eligible same-role substitution or report a blocker. Never broaden the matrix to work around availability.
 
 ### Ownership and Reuse
 
@@ -58,7 +65,7 @@ After approval, initialize the complete active `update_plan`; keep one step in p
 
 ## 2. Plan and One Review
 
-**REQUIRED SUB-SKILL: superpowers:writing-plans.** Write a separate implementation plan linking to the approved spec, then perform its self-review. Create one fresh independent Opus/Terra Pi reviewer. Use this calibrated prompt verbatim, substituting paths; do not turn it into an adversarial attack:
+**REQUIRED SUB-SKILL: superpowers:writing-plans.** Write a separate implementation plan linking to the approved spec, then perform its self-review. Create one fresh independent Pi reviewer from the plan-review routing row. Use this calibrated prompt verbatim, substituting paths; do not turn it into an adversarial attack:
 
 ```
 You are a plan document reviewer. Verify this plan is complete and ready for implementation.
@@ -130,7 +137,7 @@ Recheck `bd ready` until no open beads remain. Tests attached to an edit prove o
 
 **Total budget: one plan review, one final review, at most one final re-review.** No stronger-model gate or additional deep pass. Reuse/replacement never resets this budget.
 
-Use one suitable independent Opus/Terra Pi reviewer, preferably the plan reviewer; create only if none qualifies. Supply the spec/plan paths, diff/base reference and test evidence. Review the whole implementation against the spec for correctness, code quality, regressions/tests and security/edge cases in one verdict. Freeze reviewed files until it returns. Record scope, reviewer, revision, verdict and rounds used.
+Use one suitable independent Pi reviewer from the final-review routing row, preferably the plan reviewer; create only if none qualifies. Supply the spec/plan paths, diff/base reference and test evidence. Review the whole implementation against the spec for correctness, code quality, regressions/tests and security/edge cases in one verdict. Freeze reviewed files until it returns. Record scope, reviewer, revision, verdict and rounds used.
 
 Final review and optional re-review name their scope and return:
 
