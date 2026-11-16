@@ -42,33 +42,37 @@ SoL-Pi is an extension, not the `Agent` or `SubagentWorkflow` system. Use only m
 
 ## Model Role Routing
 
-Use this user-approved role matrix instead of generic "strongest profile" routing. These are model families, not saved Paseo profile names. Choose one eligible agent per job—not every model in the row. The last gate explicitly requires three fresh agents.
+Use this user-approved role matrix instead of generic "strongest profile" routing. These are model families, not saved Paseo profile names. Choose one eligible agent per job—not every model in the row. The last gate explicitly requires one fresh agent.
 
 | Role | Eligible provider/model families |
 |---|---|
-| Main orchestrator | Astra via Pi · Fable via Claude · Sol via Pi · Opus via Claude |
-| Plan, spec-compliance, code-quality and final reviewers | Astra via Pi · Fable via Claude |
-| Building features, complex debugging, security and cross-cutting work | Sol via Pi · Opus via Claude |
-| Simple, bounded, low-risk implementation or docs | GPT-5.3 Codex Spark via Pi · Terra via Pi · Gemini 3.8 Flash via AGY (`antigravity`) · Sonnet via Claude |
-| Last gate: three fresh agents, one round | Fable via Claude · Astra via Pi; high reasoning when supported |
+| Main orchestrator | Fable via Claude · Opus via Claude · Astra via Pi · Sol via Pi |
+| Plan, spec-compliance, code-quality and final reviewers | Opus via Claude · Terra via Pi |
+| Building features, complex debugging, security and cross-cutting work | Opus via Claude |
+| Simple, bounded, low-risk implementation or docs | Sonnet via Claude · Terra via Pi |
+| Last gate: one fresh agent, one round | Fable via Claude |
 
-**Spark is speed-first, not a strongest-reasoning model.** Use it for clearly specified, small, low-risk edits, docs and mechanical fixes with narrow validation. Escalate ambiguous, complex, security-sensitive or cross-cutting work to Sol/Opus. Spark is not eligible for orchestration or independent review.
+**No simple-tier speed-tier model is in scope.** Without a Codex-Spark or AGY tier available, every bounded or low-risk task routes through Sonnet/Terra. Escalate ambiguous, complex, security-sensitive or cross-cutting work to Opus. No speed-tier model is eligible for orchestration or independent review.
 
-**Mix providers without creating extra agents beyond the required three-agent last gate.** Prefer an eligible existing owner/reviewer for follow-ups. For new implementation/review pairs, prefer Sol + Fable or Opus + Astra for cross-provider contrast when available. Simple work can use any simple-tier option; security-sensitive work is not simple merely because its diff is small. Reviewer independence and the reuse contract still apply; do not rotate agents just for variety. A simple worker whose task grows beyond its tier hands off to Sol/Opus with ownership and context recorded.
+**Claude-first routing budget:** target roughly **70% of eligible role assignments** to Claude across a pipeline run. When both routes are eligible, prefer Claude: Sonnet for simple work, Opus for complex work and ordinary reviews, Fable for the last gate. Terra via Pi supplies the remaining capacity and is the alternative for simple work and ordinary reviews. Count a role assignment once when a worker/reviewer is first assigned; reusing that agent for its related follow-ups does not alter the ratio. Do not create extra turns, agents, or unsuitable assignments merely to meet the target.
 
-**Resolve before launch:** call `list_profiles` and select a matching role/model profile from its notes; materialize its settings per `pi-agents`. If none fits or profiles are empty, say so and use `list_providers`, `list_models`, and `inspect_provider` as needed. Verified discovery examples (recheck at launch, not permanent aliases): Astra `pi/openai-codex/gpt-6-astra`; Sol `pi/openai-codex/gpt-5.6-sol`; Terra `pi/openai-codex/gpt-5.6-terra`; Spark `pi/openai-codex/gpt-5.3-codex-spark`; Fable `claude/claude-fable-5-1`; Opus `claude/claude-opus-5`; Sonnet `claude/claude-sonnet-5`. Preserve Pi's nested model ID. Do not pass the literal family name or a guessed mode/feature. Apply the thinking-effort policy below instead of a profile's higher effort default, without silently broadening permissions.
+**Mix providers without creating extra agents beyond the one required last-gate agent.** Prefer an eligible existing owner/reviewer for follow-ups. For new implementation/review pairs, use Terra where needed for the routing budget or provider diversity; otherwise retain the Claude-first preference. Simple work uses Sonnet/Terra; building and complex work uses Opus. Reviewer independence and the reuse contract still apply; do not rotate agents just for variety. A simple worker whose task grows beyond its tier hands off to Opus with ownership and context recorded.
 
-AGY discovery may return malformed tab-separated ID/display-label strings. Do not pass those strings or guess a stripped ID: require an unambiguous verified model ID; until then select Terra/Sonnet and report Gemini unavailable. On any unavailable route, reuse or select an eligible same-role alternative and disclose the substitution. If none is available, report a blocker—do not silently move Opus into reviewing or Sonnet into complex building/orchestration.
+**Resolve before launch:** call `list_profiles` and select a matching role/model profile from its notes; materialize its settings per `pi-agents`. If none fits or profiles are empty, say so and use `list_providers`, `list_models`, and `inspect_provider` as needed. Verified discovery examples (recheck at launch, not permanent aliases): Terra `pi/openai-codex/gpt-5.6-terra`; Fable `claude/claude-fable-5-1`; Opus `claude/claude-opus-5`; Sonnet `claude/claude-sonnet-5`. Preserve Pi's nested model ID. Do not pass the literal family name or a guessed mode/feature. Apply the thinking-effort policy below instead of a profile's higher effort default, without silently broadening permissions.
+
+No alternative providers are in scope for this skill. AGY routes and other external providers must not be selected. **Run Claude routes for real eligible pipeline work while its five-hour usage window remains available.** On a confirmed Claude usage-limit failure, record the event, stop creating or reusing Claude agents for the remainder of that window, and do not send probe/retry prompts solely to test the limit. Route only roles Terra is eligible for (simple work and ordinary reviews) to Pi; complex work and the Fable-only last gate become blockers. Do not create meaningless work to exhaust quota. On any other unavailable route, reuse or select an eligible same-role alternative and disclose the substitution. If none is available, report a blocker—do not silently move Opus into reviewing or Sonnet into complex building/orchestration, and do not introduce a non-listed provider to plug the gap.
+
+**Astra and Sol are parent-orchestrator options only.** Discover their live Pi model IDs rather than guessing aliases. Their eligibility does not change worker/reviewer routing, the Claude-first subagent budget, or the Fable-only last gate. The Claude-limit restriction on routing work to Pi applies to subagent assignments, not an already eligible Astra/Sol parent; switching or handing off the parent still requires explicit user approval.
 
 **Orchestrator preflight:** check the current model when exposed by the host. Do not change the running orchestrator or spawn a replacement automatically. If it is outside the main-orchestrator row (including discovery mid-run), pause and ask for a switch/handoff before further autonomous execution; if unknown, disclose that verification is needed. This row governs which model runs the parent, not an extra coordinating subagent.
 
 ### Subagent thinking-effort policy
 
-Use low for simple bounded tasks; medium for implementation, complex debugging, plan review, spec review, quality review, and the ordinary final-review loop; high only for the three fresh last-gate reviewers. This overrides higher effort in saved profiles and generic delegation guidance. Discover supported thinking option IDs before setting them; never guess IDs. Select an eligible model that supports the required effort; if unavailable, report the limitation rather than silently using high for ordinary subagents. For providers without an effort control, disclose that effort cannot be enforced and request a supported alternative. Reused agents retain their assigned effort unless their role changes; update settings before dispatch when necessary. Do not change global settings or the parent orchestrator's effort.
+Use low for simple bounded tasks; medium for implementation, complex debugging, plan review, spec review, code-quality review, the ordinary final-review loop, and the last-gate reviewer. This overrides higher effort in saved profiles and generic delegation guidance. Discover supported thinking option IDs before setting them; never guess IDs. Select an eligible model that supports the required effort; if unavailable, report the limitation rather than silently using high for ordinary subagents. For providers without an effort control, disclose that effort cannot be enforced and request a supported alternative. Reused agents retain their assigned effort unless their role changes; update settings before dispatch when necessary. Do not change global settings or the parent orchestrator's effort.
 
 ## Agent Reuse Contract
 
-**Reuse context before creating agents.** This overrides subagent-driven-development's fresh-worker-per-task rule, not its two-stage review. Keep a small pool: normally one worker per active file-ownership lane and one independent reviewer. Reuse the plan reviewer for implementation/final review when suitably configured; retain the separate three-fresh-agent last gate. That gate overrides reuse: three new agentIds with no prior pipeline participation; different models are not required.
+**Reuse context before creating agents.** This overrides subagent-driven-development's fresh-worker-per-task rule, not its two-stage review. Keep a small pool: normally one worker per active file-ownership lane and one independent reviewer. Reuse the plan reviewer for implementation/final review when suitably configured; create the one-fresh-agent last gate separately. That gate overrides reuse: one new agentId with no prior pipeline participation; the gate is single-seat.
 
 Persist a compact roster in plan decisions: agentId, role/profile/effort, workspace, owned files/beads, reviewerId, expected follow-up, pending turn ID, last processed completion ID, spec/plan revision, last interaction. Rehydrate it after compaction.
 
@@ -119,7 +123,7 @@ digraph git_gud {
     "Open beads remain?" [shape=diamond style=filled fillcolor="#cce5ff"];
     "Final review clean?" [shape=diamond style=filled fillcolor="#cce5ff"];
     "File findings as fix beads" [shape=box style=filled fillcolor="#cce5ff"];
-    "Last gate: THREE fresh reviewers,\nONE round (fix beads, no re-review)" [shape=box style=filled fillcolor="#cce5ff"];
+    "Last gate: ONE fresh reviewer,\nONE round (fix beads, no re-review)" [shape=box style=filled fillcolor="#cce5ff"];
     "Finish: run finishing-a-development-branch,\npresent its menu, WAIT for user's choice\n(push on command)" [shape=doublecircle style=filled fillcolor="#cce5ff"];
 
     "Brainstorm + refine into spec" -> "Magic keyword?\n(\"no cap\" / \"autopilot\" / \"lgtm\")" [label="incl. brainstorming's\nown spec self-review"];
@@ -133,8 +137,8 @@ digraph git_gud {
     "Open beads remain?" -> "Final review clean?" [label="no"];
     "Final review clean?" -> "File findings as fix beads" [label="findings"];
     "File findings as fix beads" -> "Dispatch workers off `bd ready`\n(each commits its task)";
-    "Final review clean?" -> "Last gate: THREE fresh reviewers,\nONE round (fix beads, no re-review)" [label="clean"];
-    "Last gate: THREE fresh reviewers,\nONE round (fix beads, no re-review)" -> "Finish: run finishing-a-development-branch,\npresent its menu, WAIT for user's choice\n(push on command)";
+    "Final review clean?" -> "Last gate: ONE fresh reviewer,\nONE round (fix beads, no re-review)" [label="clean"];
+    "Last gate: ONE fresh reviewer,\nONE round (fix beads, no re-review)" -> "Finish: run finishing-a-development-branch,\npresent its menu, WAIT for user's choice\n(push on command)";
 }
 ```
 
@@ -151,9 +155,25 @@ digraph git_gud {
 
 Run to completion. Initialize `update_plan` from the approved spec before planning begins, keep exactly one step `in_progress`, and update it at every phase and bead completion boundary. Plan records are concise evidence, not duplicated specs or raw logs. Follow `pi-agents` whenever this workflow delegates: list profiles, choose from their notes, materialize the selected profile into `create_agent`, keep completion notifications enabled, and use the Agent Reuse Contract for related beads, fixes and reviews. Never pause for plan approval, task-breakdown confirmation, progress check-ins, or "should I continue?". Legitimate stops only: unresolvable blocker, genuine ambiguity in the approved spec, Paseo unavailability, an orchestrator outside the approved role row requiring switch/handoff, or a review finding surviving two fix rounds.
 
+### Reading subagent output (`paseo_get_agent_activity`)
+
+The `notifyOnFinish` signal only tells you a run ended — it does not carry content. After the notification, read the result through `paseo_get_agent_activity`. **Standard limit is `5`** — it is the cheapest call that reliably returns the agent's final prose summary plus enough trailing tool context to verify it (~1.2k tokens on a typical run). Use the following escalation rules:
+
+| What you see in `limit=5` | Action |
+|---|---|
+| The last entry is an assistant prose block (Markdown summary, verdict, decision) | Synthesize for the user. Done. |
+| The last entry is a tool trace (`[Bash]`, `[Shell]`, `[Task]`, `[Toolsearch]`, etc.) | The agent stopped mid-tool or its last action was a command, not a conclusion. Re-query with `limit=10` to find the last prose block above it. |
+| No prose block visible at `limit=10`, or the agent is in `error`/`closed` state | Re-query with no limit. Pay the token cost — you need the full tail to diagnose. |
+| The `content` field is the agent's `[User]` echo or a stale `[User]` line | The run did not produce a real conclusion. Treat as a failed run; follow the failed-agentId recovery rule in the Agent Reuse Contract. |
+
+Hard rules:
+- Never call `get_agent_activity` with no `limit` for routine completion reads — the server caps at ~26 most-recent activities regardless, so the only thing an unparameterized call buys you is noise.
+- The `content` field is the most-recent timeline entry, not necessarily the final assistant message. Always confirm the last entry is prose before treating it as the verdict.
+- The `updateCount` field reports the total events in the run; if it is much larger than what `limit=5` returns, the head of the timeline is hidden — that is fine for normal reads but a reason to escalate when debugging.
+
 1. **Plan.** REQUIRED SUB-SKILL: superpowers:writing-plans, at its default location `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`. Opens with a link to the spec file and references its requirements — never restates them. Override the sub-skill's review pause: no plan approval, no execution-choice question — subagent-driven is already chosen.
 
-   **Then review the plan — ONE round, ONE reviewer.** After writing-plans' self-review, create **one fresh Paseo plan-review agent** using `pi-agents`. Choose Astra via Pi or Fable via Claude under Model Role Routing; prefer cross-provider contrast with the orchestrator when possible. Never guess IDs. Use this prompt verbatim — the calibration is tuned upstream, **do not sharpen it into an attack**:
+   **Then review the plan — ONE round, ONE reviewer.** After writing-plans' self-review, create **one fresh Paseo plan-review agent** using `pi-agents`. Choose Opus via Claude or Terra via Pi under Model Role Routing; prefer cross-provider contrast with the orchestrator when possible. Never guess IDs. Use this prompt verbatim — the calibration is tuned upstream, **do not sharpen it into an attack**:
 
    ```
    You are a plan document reviewer. Verify this plan is complete and ready for implementation.
@@ -224,7 +244,7 @@ Run to completion. Initialize `update_plan` from the approved spec before planni
 
    Any Critical or Important finding forces `VERDICT: FAIL`; a PASS carrying one is malformed — send the reviewer a delta prompt asking for a consistent verdict, do not interpret it. Minor findings do not block. Prose without this block is not a verdict; a combined spec+quality reply is not two reviews.
 
-3. **Dispatch Paseo workers off `bd ready`** — assign ready beads to the reusable owner pool via the lifecycle contract, following `pi-agents`. Several independent ready lanes → dispatch concurrently using existing idle agents before `create_agent`; blocked chains run sequentially as blockers close. Preserve superpowers:subagent-driven-development's two-stage review (spec compliance, then code quality): the same independent reviewer may perform both in separate turns, and must not implement the work it approves. Reuse that reviewer across beads and fix rounds; route every worker and reviewer through Paseo. Apply Model Role Routing: Sol/Opus for building and complex work, Spark/Terra/Gemini 3.8 Flash/Sonnet for genuinely simple work, Astra/Fable for all independent reviews. Never guess provider/model/mode IDs. Every worker prompt states:
+3. **Dispatch Paseo workers off `bd ready`** — assign ready beads to the reusable owner pool via the lifecycle contract, following `pi-agents`. Several independent ready lanes → dispatch concurrently using existing idle agents before `create_agent`; blocked chains run sequentially as blockers close. Preserve superpowers:subagent-driven-development's two-stage review (spec compliance, then code quality): the same independent reviewer may perform both in separate turns, and must not implement the work it approves. Reuse that reviewer across beads and fix rounds; route every worker and reviewer through Paseo. Apply Model Role Routing: Opus for building and complex work, Sonnet/Terra for genuinely simple work, Opus/Terra for all independent reviews. Never guess provider/model/mode IDs. Every worker prompt states:
    - Use the Context delivery and recovery rules: conditional `bd prime`, delta-only reused-agent prompts, and live targeted bead checks/atomic claims. The live bd DB remains authoritative; context reuse does not waive task ownership checks.
    - Coordinator assigns ownership via `bd update "$ID" --assignee "$AGENT_ID"`. Worker claims only its assigned ready work via `bd --actor "$AGENT_ID" ready --assignee "$AGENT_ID" --claim --json`. Never take another owner's fix or bypass blockers; wait if none is ready.
    - TDD; commit your own task once tests are green (one commit per bead — per-task commits are the history, never squash).
@@ -233,19 +253,19 @@ Run to completion. Initialize `update_plan` from the approved spec before planni
    - `bd close "$ID"` only after the two-stage review passes.
 
    Re-check `bd ready`; repeat until no open beads remain.
-4. **Final review — loop until clean.** Reuse one suitable independent Paseo reviewer from the roster (create only if none qualifies), selected via `pi-agents` and the Astra/Fable reviewer row, over the whole implementation **against the spec file**. Route the verdict mechanically:
+4. **Final review — loop until clean.** Reuse one suitable independent Paseo reviewer from the roster (create only if none qualifies), selected via `pi-agents` and the Opus/Terra reviewer row, over the whole implementation **against the spec file**. Route the verdict mechanically:
    - Critical/Important findings → each becomes a new fix bead (link deps if coupled) → workers off `bd ready` as usual → **send the same reviewer a follow-up using its existing agentId**. Fix without re-review ≠ reviewed.
    - Minor/nitpicks → one batched cleanup bead or a note in the final report.
    - Same finding survives two fix rounds → stop, report blocker to the user.
-   - Clean pass → three-fresh-reviewer last gate.
-5. **Last review gate — THREE fresh subagents, ONE round.** After the final-review loop passes clean, create **three distinct new Paseo reviewer agents** in the same pipeline workspace. Each starts with fresh context and has had no prior role in this pipeline. A warmed reviewer, a reset prompt, or three turns to one agent does not qualify. Select each from Fable via Claude / Astra via Pi using Model Role Routing's profile/discovery process, with high reasoning when supported. Prefer a mix when both are available; three agents may share an eligible model. If only one family is available, disclose this and still launch three fresh agents; if neither is available, report a blocker. Never substitute Spark or guess IDs.
+   - Clean pass → one-fresh-reviewer last gate.
+5. **Last review gate — ONE fresh subagent, ONE round.** After the final-review loop passes clean, create **one distinct new Paseo reviewer agent** in the same pipeline workspace. It starts with fresh context and has had no prior role in this pipeline. A warmed reviewer or a reset prompt does not qualify. Select from Fable via Claude using Model Role Routing's profile/discovery process. If Fable is unavailable, report a blocker; no fallback reviewer is eligible for the last gate.
 
-   Launch three read-only reviews independently in parallel against the same implementation revision and spec. Give each spec/plan paths, diff/base reference and verification evidence, not another reviewer's verdict. Every reviewer covers the whole implementation; add emphasis respectively on (1) spec/correctness, (2) regressions/tests, and (3) security/edge cases. Freeze edits until all three return. Record all three agentIds and verdicts; one or two responses cannot satisfy the gate, even under deadline or budget pressure. A reviewer that returns no verdict block (provider limit, error, timeout, closed session) does not count: record the failed agentId and reason, create one new fresh agent for that seat against the same frozen revision, and keep edits frozen until three verdicts exist. Never reuse the failed agent, re-prompt another seat, or accept two verdicts.
+   Launch one read-only review against the same implementation revision and spec. Give it spec/plan paths, diff/base reference, and verification evidence, not another reviewer's verdict. Cover the whole implementation with emphasis on (1) spec/correctness, (2) regressions/tests, and (3) security/edge cases — all three lenses in a single verdict block, not three reviewers. Freeze edits until the verdict returns. Record the agentId and verdict; one verdict satisfies the gate, even under deadline or budget pressure. A reviewer that returns no verdict block (provider limit, error, timeout, closed session) does not count: record the failed agentId and reason, create one new fresh agent against the same frozen revision, and keep edits frozen until a verdict exists. Never reuse the failed agent or accept a missing verdict.
 
    Deduplicate findings with evidence; retain unresolved disagreements rather than taking a majority vote. Route mechanically:
-   - Critical/Important findings from any reviewer → fix beads → original owners off `bd ready` → then proceed to Finish. No second last-gate round; fixes still require workers' own two-stage independent review.
+   - Critical/Important findings → fix beads → original owners off `bd ready` → then proceed to Finish. No second last-gate round; fixes still require workers' own two-stage independent review.
    - Minor/nitpicks → note in the final report.
-   - All three clean → Finish (step 6: menu, then wait).
+   - Verdict clean → Finish (step 6: menu, then wait).
 6. **Finish — menu, then WAIT.** REQUIRED SUB-SKILL: superpowers:finishing-a-development-branch. Run it as written: verify tests, detect environment, confirm the base branch, then **present its integration menu (merge locally / push + PR / keep as-is) and STOP until the user answers**. Autopilot never picks an option itself — "no further gates" does NOT extend to integration; merging or touching the base branch without the user's chosen option is a violation. Execute only the option they choose. **Push ONLY on the user's explicit command.**
 
    Before the menu, print the **final report** in exactly this shape; every "note in the final report" above lands here:
@@ -254,10 +274,11 @@ Run to completion. Initialize `update_plan` from the approved spec before planni
    ## Final report
    Spec: <path@revision>   Plan: <path@revision>   Base: <branch>
    Beads: <id> — <commit> — <owner agentId>   (one line each)
-   Reviews: <scope> — <reviewer agentId> — PASS|FAIL — <n> findings   (task, final, last gate ×3)
+   Reviews: <scope> — <reviewer agentId> — PASS|FAIL — <n> findings   (task, final, last gate)
    Unresolved minors: <finding or none>
    Blockers hit: <what, how resolved, or none>
    Runtime degradation: <SoL-Pi mechanism unavailable, substitutions, or none>
+   Claude quota: <active | exhausted; affected roles and Terra substitutions | not observed>
    Tests: <command> — <result>
    ```
 
@@ -288,8 +309,8 @@ Run to completion. Initialize `update_plan` from the approved spec before planni
 - "Close the bead when code's written" → Only after the two-stage review passes.
 - "Self-review is enough" → Final review is a separate reviewer, not the implementer approving itself.
 - "Reviewer findings are small, I'll fix them myself" / "one pass is done" → Findings → fix beads → re-review. Only a clean pass ends the loop.
-- "One warmed reviewer is enough; deadline/budget is tight" / "three turns count as three reviewers" / "only Astra is available, so use one" → Last gate requires three fresh distinct agentIds and independent verdicts, one round; the same eligible model may fill all three seats.
-- "Run the last gate again after fixes" / "skip it, final review was clean" → Exactly one three-agent last-gate round. Wait for all three verdicts; fixes route through original owners and their two-stage reviews, then Finish.
+- "One warmed reviewer is enough; deadline/budget is tight" / "two turns count as two reviewers" / "only Fable is available, so use one" → Last gate requires exactly one fresh distinct agentId and an independent verdict, one round.
+- "Run the last gate again after fixes" / "skip it, final review was clean" → Exactly one one-agent last-gate round. Wait for the verdict; fixes route through original owners and their two-stage reviews, then Finish.
 - "`git add -A` to be safe" → Explicit paths only in the shared worktree.
 - "Sync with `git pull --rebase`" / "squash the worker commits" / "I'll push it for them" → Never during autopilot; per-task commits stay; push waits for the user's command.
 - "Last gate is clean, I'll merge to the base branch to wrap up" / "git-gud says no further gates, so integration is pre-approved" → No. finishing-a-development-branch presents its menu and autopilot WAITS there; the user picks the integration option, never you.
